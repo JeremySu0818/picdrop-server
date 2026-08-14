@@ -304,29 +304,31 @@ UploadStore::GetDownloadStatus(const std::string &lookup_key) {
   if (chunked_lookup != chunked_lookup_.end()) {
     ChunkedSession *session = FindChunkedSession(chunked_lookup->second);
     if (session == nullptr || session->pending_delete) {
-      return {{404, kNotFoundMessage}, 0};
+      return {{404, kNotFoundMessage}, 0, 0};
     }
     if (session->expires_at <= now) {
       EraseChunkedUpload(chunked_lookup->second);
-      return {{410, kExpiredMessage}, 0};
+      return {{410, kExpiredMessage}, 0, 0};
     }
     if (session->state == ChunkedSessionState::Ready ||
         session->state == ChunkedSessionState::Downloading) {
-      return {{200, nullptr}, session->expires_at};
+      return {{200, nullptr}, session->expires_at, session->files.size()};
     }
-    return {{409, "Upload is still being prepared."}, session->expires_at};
+    return {{409, "Upload is still being prepared."}, session->expires_at,
+            session->files.size()};
   }
 
   const auto legacy_upload = uploads_.find(lookup_key);
   if (legacy_upload == uploads_.end()) {
-    return {{404, kNotFoundMessage}, 0};
+    return {{404, kNotFoundMessage}, 0, 0};
   }
   if (legacy_upload->second.expires_at <= now) {
     uploads_.erase(legacy_upload);
     ReleaseUnusedMemory();
-    return {{410, kExpiredMessage}, 0};
+    return {{410, kExpiredMessage}, 0, 0};
   }
-  return {{200, nullptr}, legacy_upload->second.expires_at};
+  return {{200, nullptr}, legacy_upload->second.expires_at,
+          legacy_upload->second.files.size()};
 }
 
 BeginChunkedDownloadResult

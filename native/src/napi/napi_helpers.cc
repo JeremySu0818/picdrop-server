@@ -563,6 +563,8 @@ napi_value Render(napi_env env, const DownloadStatusResult &result) {
   napi_value payload = MakeOkPayload(env);
   SetProperty(env, payload, "expiresAt",
               MakeNumber(env, static_cast<double>(result.expires_at)));
+  SetProperty(env, payload, "fileCount",
+              MakeNumber(env, static_cast<double>(result.file_count)));
   return MakeResult(env, result.status, payload);
 }
 

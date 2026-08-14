@@ -101,6 +101,7 @@ struct CompleteChunkedUploadResult : StatusResult {
 
 struct DownloadStatusResult : StatusResult {
   std::int64_t expires_at = 0;
+  std::size_t file_count = 0;
 };
 
 struct BeginChunkedDownloadResult : StatusResult {

@@ -93,7 +93,9 @@ type NativeUploadStore = {
   getStats: () => UploadStoreStats;
   getDownloadStatus: (
     lookupKey: string,
-  ) => NativeResult<UploadErrorPayload | { ok: true; expiresAt: number }>;
+  ) => NativeResult<
+    UploadErrorPayload | { ok: true; expiresAt: number; fileCount: number }
+  >;
   purgeExpired: () => number;
   releaseChunkedDownloadChunk: (downloadId: string, token: string) => void;
   takeDownload: (
@@ -164,7 +166,7 @@ export type UploadStore = {
   getStats: () => UploadStoreStats;
   getDownloadStatus: (
     lookupKey: string,
-  ) => StoreResult<{ ok: true; expiresAt: number }>;
+  ) => StoreResult<{ ok: true; expiresAt: number; fileCount: number }>;
   purgeExpired: () => void;
   releaseChunkedDownloadChunk: (downloadId: string, token: string) => void;
   takeDownload: (

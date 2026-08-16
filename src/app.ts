@@ -54,8 +54,18 @@ export function createApp({
           ? '*'
           : config.allowedOrigin.split(',').map((origin) => origin.trim()),
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Chunk-IV'],
-      exposedHeaders: ['Content-Length', 'X-Chunk-IV'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'Range',
+        'X-Chunk-IV',
+      ],
+      exposedHeaders: [
+        'Accept-Ranges',
+        'Content-Length',
+        'Content-Range',
+        'X-Chunk-IV',
+      ],
     }),
   );
 

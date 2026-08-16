@@ -11,6 +11,7 @@ import {
   PAYLOAD_TOO_LARGE,
   readJsonBody,
 } from '../utils/http-body.js';
+import { parseByteRange } from '../utils/http-range.js';
 import { isBase64, isLookupKey } from '../utils/validators.js';
 
 const FILE_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
@@ -203,12 +204,7 @@ export function createChunkedApiController({
         sendResult(res, chunk);
         return;
       }
-      res.set({
-        'Cache-Control': 'no-store',
-        'Content-Type': 'application/octet-stream',
-        'Content-Length': String(chunk.bytes.byteLength),
-        'X-Chunk-IV': chunk.iv,
-      });
+
       let released = false;
       const release = () => {
         if (released) return;
@@ -220,7 +216,38 @@ export function createChunkedApiController({
       };
       res.once('finish', release);
       res.once('close', release);
-      res.end(chunk.bytes);
+
+      const totalLength = chunk.bytes.byteLength;
+      const range = parseByteRange(req.headers.range, totalLength);
+      if (range.kind === 'invalid') {
+        res
+          .status(416)
+          .set({
+            'Accept-Ranges': 'bytes',
+            'Cache-Control': 'no-store',
+            'Content-Range': `bytes */${totalLength}`,
+          })
+          .end();
+        return;
+      }
+
+      const start = range.kind === 'range' ? range.start : 0;
+      const end = range.kind === 'range' ? range.end : totalLength - 1;
+      const responseBytes = chunk.bytes.subarray(start, end + 1);
+      if (range.kind === 'range') {
+        res.status(206);
+      }
+      res.set({
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'no-store',
+        'Content-Type': 'application/octet-stream',
+        'Content-Length': String(responseBytes.byteLength),
+        ...(range.kind === 'range'
+          ? { 'Content-Range': `bytes ${start}-${end}/${totalLength}` }
+          : {}),
+        'X-Chunk-IV': chunk.iv,
+      });
+      res.end(responseBytes);
     },
 
     finishDownload(req: Request, res: Response) {
